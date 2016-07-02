@@ -286,20 +286,18 @@ statement_helper(librdf_storage* storage,
 }
 
 
-static accumulo_query* accumulo_query_(accumulo_comms* c,
+static accumulo_query* accumulo_query_(accumulo_comms* ac,
 				       const char* s, const char* p,
 				       const char* o, index_type* tp)
 {
 
-    accumulo_query* q = accumulo_query_create(
-#ifdef BROKEN
-    *spo = 0;
-    *filter = 1;
-    *path = "graph/doOperation";
-    accumulo_query* qry = accumulo_create_query();
-    accumulo_configure_range_query(qry, "n:", "n;");
-    return qry;
-#endif
+    accumulo_query* q = accumulo_query_create(ac, "mytest");
+
+    accumulo_query_set_range(q, "n:", "n;");
+    accumulo_query_set_colf(q, "spo");
+
+    return q;
+
 }
 
 static accumulo_query* accumulo_query_s(accumulo_comms* c,
@@ -630,7 +628,10 @@ typedef struct {
     librdf_node* context;
 
     accumulo_iterator* it;
+    accumulo_kv* kv;
     index_type tp;
+
+    int at_end;
 
 } accumulo_results_stream;
 
@@ -638,7 +639,6 @@ static
 librdf_node* node_constructor_helper(librdf_world* world, const char* t)
 {
 
-#ifdef BROKEN
     librdf_node* o;
 
     if ((strlen(t) < 4) || (t[1] != ':') || (t[3] != ':')) {
@@ -698,24 +698,16 @@ librdf_node* node_constructor_helper(librdf_world* world, const char* t)
     return librdf_new_node_from_literal(world,
 					(unsigned char*) t + 4, 0, 0);
 
-#endif
 }
 
 static int
 accumulo_results_stream_end_of_stream(void* context)
 {
-#ifdef BROKEN
-    accumulo_results_stream* scontext;
 
+    accumulo_results_stream* scontext;
     scontext = (accumulo_results_stream*)context;
 
-    accumulo_results_iterator* iter = scontext->iterator;
-
-    if (accumulo_iterator_done(iter))
-	return 1;
-
-    return 0;
-#endif
+    return scontext->at_end;
 
 }
 
@@ -723,31 +715,19 @@ accumulo_results_stream_end_of_stream(void* context)
 static int
 accumulo_results_stream_next_statement(void* context)
 {
-#ifdef BROKEN
+    
     accumulo_results_stream* scontext;
-
     scontext = (accumulo_results_stream*)context;
+    accumulo_iterator* iter = scontext->it;
 
-    accumulo_iterator_next(scontext->iterator);
+    if (scontext->at_end) return -1;
 
-    while (!accumulo_iterator_done(scontext->iterator)) {
-
-	const char* a, *b, *c;
-	int val;
-
-	accumulo_iterator_get(scontext->iterator, &a, &b, &c, &val);
-
-	if ((val < 1) || (a[0] == '@') || (b[0] == '@') || (c[0] == '@')) {
-	    accumulo_iterator_next(scontext->iterator);
-	    continue;
-	}
-
-	break;
-	    
-    }
+    if (accumulo_iterator_has_next(iter))
+	scontext->kv = accumulo_iterator_get_next(scontext->it);
+    else
+	scontext->at_end = 1;
 
     return 0;
-#endif
 
 }
 
@@ -756,7 +736,6 @@ static void*
 accumulo_results_stream_get_statement(void* context, int flags)
 {
 
-#ifdef BROKEN
     accumulo_results_stream* scontext;
     const char* a;
     const char* b;
@@ -764,7 +743,7 @@ accumulo_results_stream_get_statement(void* context, int flags)
 	
     scontext = (accumulo_results_stream*)context;
 
-    accumulo_results_iterator* iter = scontext->iterator;
+    accumulo_iterator* iter = scontext->it;
 
     switch(flags) {
 
@@ -772,7 +751,11 @@ accumulo_results_stream_get_statement(void* context, int flags)
 
     case LIBRDF_ITERATOR_GET_METHOD_GET_OBJECT:
 
-	accumulo_iterator_get(iter, &a, &b, &c, &val);
+	a = scontext->kv->rowid;
+	b = scontext->kv->colq;
+	c = scontext->kv->value;
+
+	printf("%d %s %s %s\n", scontext->tp, a, b, c);
 
 	if (scontext->statement) {
 	    librdf_free_statement(scontext->statement);
@@ -780,16 +763,35 @@ accumulo_results_stream_get_statement(void* context, int flags)
 	}
 
 	librdf_node* sn, * pn, * on;
-	sn = node_constructor_helper(scontext->storage->world, a);
-
-	if (scontext->are_spo) {
+	if (scontext->tp == SPO) {
+	    printf("SPO\n");
+	    sn = node_constructor_helper(scontext->storage->world, a);
 	    pn = node_constructor_helper(scontext->storage->world, b);
 	    on = node_constructor_helper(scontext->storage->world, c);
-
-	} else {
-	    pn = node_constructor_helper(scontext->storage->world, c);
+	} else if (scontext->tp == POS) {
+	    printf("POS\n");
+	    pn = node_constructor_helper(scontext->storage->world, a);
 	    on = node_constructor_helper(scontext->storage->world, b);
+	    sn = node_constructor_helper(scontext->storage->world, c);
+	} else {
+	    printf("OSP\n");
+	    on = node_constructor_helper(scontext->storage->world, a);
+	    sn = node_constructor_helper(scontext->storage->world, b);
+	    pn = node_constructor_helper(scontext->storage->world, c);
 	}
+
+	printf("sn... %d ", librdf_node_get_type(sn));
+
+	if (librdf_node_is_resource(sn))
+	    printf("URI: %s\n", librdf_node_to_string(sn));
+
+	if (librdf_node_is_literal(sn))
+	    printf("Literal: %s\n", librdf_node_to_string(sn));
+
+	if (librdf_node_is_blank(sn))
+	    printf("Blank: %s\n", librdf_node_to_string(sn));
+
+	printf("]]]\n");
 
 	if (sn == 0 || pn == 0 || on == 0) {
 	    if (sn) librdf_free_node(sn);
@@ -814,7 +816,6 @@ accumulo_results_stream_get_statement(void* context, int flags)
 	return NULL;
     }
 
-#endif
 }
 
 static void
@@ -896,7 +897,7 @@ librdf_storage_accumulo_serialise(librdf_storage* storage)
 	const char* a, *b, *c;
 	int val;
 
-	accumulo_iterator_get(scontext->iterator, &a, &b, &c, &val);
+	accumulo_iterator_get_next(scontext->iterator, &a, &b, &c, &val);
 
 	if ((val < 1) || (a[0] == '@') || (b[0] == '@') || (c[0] == '@')) {
 	    accumulo_iterator_next(scontext->iterator);
@@ -996,15 +997,15 @@ librdf_storage_accumulo_find_statements(librdf_storage* storage,
     index_type tp;
     
     query_function fn = functions[num];
-    accumulo_query* query = (*fn)(instance->comms,
+    accumulo_query* query = (*fn)(context->comms,
 				  (const char*) s,
 				  (const char*) p,
 				  (const char*) o,
 				  &tp);
 
-    printf("ASD\n");
+    printf("Execute query...\n");
     accumulo_iterator* it = accumulo_query_execute(query);
-    printf("DEF\n");
+    printf("Executed.\n");
 
     accumulo_query_free(query);
 
@@ -1015,23 +1016,11 @@ librdf_storage_accumulo_find_statements(librdf_storage* storage,
 
     scontext->it = it;
 
-    /*
-    while (!accumulo_iterator_done(scontext->iterator)) {
-
-	const char* a, *b, *c;
-	int val;
-
-	accumulo_iterator_get(scontext->iterator, &a, &b, &c, &val);
-
-	if ((val < 1) || (b[0] == '@') || (c[0] == '@')) {
-	    accumulo_iterator_next(scontext->iterator);
-	    continue;
-	}
-
-	break;
-	    
-    }
-    */
+    if (accumulo_iterator_has_next(it)) {
+	scontext->kv = accumulo_iterator_get_next(it);
+	scontext->at_end = 0;
+    } else
+	scontext->at_end = 1;
 
     stream =
 	librdf_new_stream(storage->world,
@@ -1044,6 +1033,7 @@ librdf_storage_accumulo_find_statements(librdf_storage* storage,
 	accumulo_results_stream_finished((void*)scontext);
 	return NULL;
     }
+    printf("Return stream\n");
   
     return stream;
 
@@ -1087,45 +1077,6 @@ librdf_storage_accumulo_context_add_statement(librdf_storage* storage,
 
     accumulo_writer_flush(wr);
     accumulo_writer_free(wr);
-
-#ifdef ASDASDSD
-    if (context->transaction) {
-
-	/* Create S,O -> P */
-	accumulo_add_edge_object(context->transaction, p, s, o, "@r", 1);
-
-	/* Create S,P -> O */
-	accumulo_add_edge_object(context->transaction, o, s, p, "@n", 1);
-
-	if (s) free(s);
-	if (p) free(p);
-	if (o) free(o);
-
-	return 0;
-
-    }
-
-    accumulo_elements* elts = accumulo_elements_create(context->comms);
-
-    /* Create S,O -> P */
-    accumulo_add_edge_object(elts, p, s, o, "@r", 1);
-
-    /* Create S,P -> O */
-    accumulo_add_edge_object(elts, o, s, p, "@n", 1);
-
-    if (s) free(s);
-    if (p) free(p);
-    if (o) free(o);
-
-    int ret = accumulo_add_elements(context->comms, elts);
-
-    accumulo_elements_free(elts);
-
-    if (ret < 0)
-	return -1;
-
-    return 0;
-#endif
 
 }
 

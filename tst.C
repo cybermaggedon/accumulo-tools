@@ -1,4 +1,4 @@
-#include "../client/AccumuloAPI.h"
+#include "AccumuloAPI.h"
 
 void add_triple(BatchWriter writer,
 		const std::string& s, const std::string& p,
@@ -25,12 +25,12 @@ void add_triple(BatchWriter writer,
 int main(int argc, char* argv[])
 {
 
-    Connector connector("localhost4", 42424, "root", "accumulo");
+    Connector connector("gaffer", 42424, "root", "accumulo");
 
     Authorizations auths("");
 
     try {
-	connector.tableOperations().createTable("mytest");
+	connector.tableOperations().createTable("mytest2");
     } catch (TableExistsException& e) {
 	std::cerr << "Create table failed ignored." << std::endl;
     }

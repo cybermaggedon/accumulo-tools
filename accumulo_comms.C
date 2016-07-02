@@ -139,10 +139,9 @@ accumulo_kv* accumulo_iterator_get_next(accumulo_iterator* i)
 
 accumulo_iterator* accumulo_query_execute(accumulo_query* q)
 {
-    std::cerr << "000lkjklj" << std::endl;
     ScannerIterator it = q->s.iterator();
 
-    std::cerr << "lkjklj" << std::endl;
+
     return new accumulo_iterator(it);
 }
 
