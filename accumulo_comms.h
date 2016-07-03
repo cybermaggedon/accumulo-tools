@@ -35,6 +35,7 @@ typedef struct accumulo_iterator_str accumulo_iterator;
   accumulo_query* accumulo_query_create(accumulo_comms*, const char* table);
 int accumulo_query_set_range(accumulo_query*, const char* s, const char* e);
 int accumulo_query_set_colf(accumulo_query*,const char*);
+int accumulo_query_set_col(accumulo_query*,const char*, const char*);
 accumulo_iterator* accumulo_query_execute(accumulo_query*);
 
   void accumulo_query_free(accumulo_query*);

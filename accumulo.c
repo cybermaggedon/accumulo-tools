@@ -296,113 +296,132 @@ static accumulo_query* accumulo_query_(accumulo_comms* ac,
     accumulo_query_set_range(q, "n:", "n;");
     accumulo_query_set_colf(q, "spo");
 
+    *tp = SPO;
+
     return q;
 
 }
 
-static accumulo_query* accumulo_query_s(accumulo_comms* c,
+static accumulo_query* accumulo_query_s(accumulo_comms* ac,
 					const char* s, const char* p,
 					const char* o, index_type* tp)
 {
-#ifdef ASD
-    *spo = 0;
-    *filter = 1;
-    *path = "graph/doOperation/get/edges/related";
-    accumulo_query* qry = accumulo_create_query();
-    accumulo_configure_relationship_filter_view(qry);
-    accumulo_configure_entity_seed(qry, s);
-    json_object_object_add(qry, "includeIncomingOutGoing",
-			   json_object_new_string("OUTGOING"));
-    return qry;
-#endif
+
+    accumulo_query* q = accumulo_query_create(ac, "mytest");
+
+    char* tmp = malloc(strlen(s) + 2);
+    sprintf(tmp, "%s%c", s, 1);
+    accumulo_query_set_range(q, s, tmp);
+    accumulo_query_set_colf(q, "spo");
+    free(tmp);
+
+    *tp = SPO;
+
+    return q;
+
 }
 
-static accumulo_query* accumulo_query_p(accumulo_comms* c,
+static accumulo_query* accumulo_query_p(accumulo_comms* ac,
 					const char* s, const char* p,
 					const char* o, index_type* tp)
 {
-#ifdef BROKEN
-    *spo = 1;
-    *filter = 1;
-    *path = "graph/doOperation/get/edges/related";
-    accumulo_query* qry = accumulo_create_query();
-    accumulo_configure_entity_seed(qry, p);
-    json_object_object_add(qry, "includeIncomingOutGoing",
-			   json_object_new_string("INCOMING"));
-    return qry;
-#endif
+
+    accumulo_query* q = accumulo_query_create(ac, "mytest");
+
+    char* tmp = malloc(strlen(p) + 2);
+    sprintf(tmp, "%s%c", p, 1);
+    accumulo_query_set_range(q, p, tmp);
+    accumulo_query_set_colf(q, "pos");
+    free(tmp);
+
+    *tp = POS;
+
+    return q;
+
 }
 
-static accumulo_query* accumulo_query_o(accumulo_comms* c,
+static accumulo_query* accumulo_query_o(accumulo_comms* ac,
 					const char* s, const char* p,
 					const char* o, index_type* tp)
 {
-#ifdef BROKEN
-    *spo = 0;
-    *filter = 1;
-    *path = "graph/doOperation/get/edges/related";
-    accumulo_query* qry = accumulo_create_query();
-    accumulo_configure_entity_seed(qry, o);
-    json_object_object_add(qry, "includeIncomingOutGoing",
-			   json_object_new_string("INCOMING"));
-    return qry;
-#endif
+
+    accumulo_query* q = accumulo_query_create(ac, "mytest");
+
+    char* tmp = malloc(strlen(o) + 2);
+    sprintf(tmp, "%s%c", o, 1);
+    accumulo_query_set_range(q, o, tmp);
+    accumulo_query_set_colf(q, "osp");
+    free(tmp);
+
+    *tp = OSP;
+
+    return q;
+
 }
 
-static accumulo_query* accumulo_query_sp(accumulo_comms* c,
+static accumulo_query* accumulo_query_sp(accumulo_comms* ac,
 					 const char* s, const char* p,
 					 const char* o, index_type* tp)
 {
-#ifdef BROKEN
-    *spo = 1;
-    *filter = 1;
-    *path = "graph/doOperation/get/edges/related";
-    accumulo_query* qry = accumulo_create_query();
-    accumulo_configure_edge_seeds(qry, s, p);
-    json_object_object_add(qry, "includeIncomingOutGoing",
-			   json_object_new_string("INCOMING"));
-    return qry;
-#endif
+
+    accumulo_query* q = accumulo_query_create(ac, "mytest");
+
+    char* tmp = malloc(strlen(s) + 2);
+    sprintf(tmp, "%s%c", s, 1);
+    accumulo_query_set_range(q, s, tmp);
+    accumulo_query_set_col(q, "spo", p);
+    free(tmp);
+
+    *tp = SPO;
+
+    return q;
+
 }
 
-static accumulo_query* accumulo_query_so(accumulo_comms* c,
+static accumulo_query* accumulo_query_so(accumulo_comms* ac,
 					 const char* s, const char* p,
 					 const char* o, index_type* tp)
 {
-#ifdef BROKEN
-    *spo = 1;
-    *filter = 1;
-    *path = "graph/doOperation/get/edges/related";
-    accumulo_query* qry = accumulo_create_query();
-    accumulo_configure_entity_seed(qry, s);
-    accumulo_configure_edge_filter_view(qry, o);
-    json_object_object_add(qry, "includeIncomingOutGoing",
-			   json_object_new_string("OUTGOING"));
-    return qry;
-#endif
+
+    accumulo_query* q = accumulo_query_create(ac, "mytest");
+
+    char* tmp = malloc(strlen(o) + 2);
+    sprintf(tmp, "%s%c", o, 1);
+    accumulo_query_set_range(q, o, tmp);
+    accumulo_query_set_col(q, "osp", s);
+    free(tmp);
+
+    *tp = OSP;
+
+    return q;
+
 }
 
-static accumulo_query* accumulo_query_po(accumulo_comms* c,
+static accumulo_query* accumulo_query_po(accumulo_comms* ac,
 					 const char* s, const char* p,
 					 const char* o, index_type* tp)
 {
-#ifdef BROKEN
-    *spo = 0;
-   *filter = 1;
-    *path = "graph/doOperation/get/edges/related";
-    accumulo_query* qry = accumulo_create_query();
-    accumulo_configure_entity_seed(qry, o);
-    accumulo_configure_edge_filter_view(qry, p);
-    json_object_object_add(qry, "includeIncomingOutGoing",
-			   json_object_new_string("INCOMING"));
-    return qry;
-#endif
+
+    accumulo_query* q = accumulo_query_create(ac, "mytest");
+
+    char* tmp = malloc(strlen(p) + 2);
+    sprintf(tmp, "%s%c", p, 1);
+    accumulo_query_set_range(q, p, tmp);
+    accumulo_query_set_col(q, "pos", o);
+    free(tmp);
+
+    *tp = POS;
+
+    return q;
+
 }
 
 static accumulo_query* accumulo_query_spo(accumulo_comms* c,
 					  const char* s, const char* p,
 					  const char* o, index_type* tp)
 {
+    fprintf(stderr, "Not implemented.\n");
+    return 0;
 #ifdef BROKEN
     *spo = 0;
     *filter = 1;
@@ -436,6 +455,7 @@ librdf_storage_accumulo_open(librdf_storage* storage, librdf_model* model)
 static int
 librdf_storage_accumulo_close(librdf_storage* storage)
 {
+    // FIXME:
 #ifdef BROKEN
     librdf_storage_accumulo_instance* context;
     context = (librdf_storage_accumulo_instance*)storage->instance;
@@ -512,14 +532,12 @@ librdf_storage_accumulo_add_statements(librdf_storage* storage,
                                      librdf_stream* statement_stream)
 {
 
-  return 0;
-#ifdef BROKEN
+    uint64_t now = time(0) * 1000;
 
     librdf_storage_accumulo_instance* context;
     context = (librdf_storage_accumulo_instance*)storage->instance;
 
-    accumulo_elements* elts;
-    elts = accumulo_elements_create();
+    accumulo_writer* wr = accumulo_writer_create(context->comms, "mytest");
 
     const int batch_size = 1000;
     int rows = 0;
@@ -543,13 +561,9 @@ librdf_storage_accumulo_add_statements(librdf_storage* storage,
 	char* c;
 	statement_helper(storage, statement, context_node, &s, &p, &o, &c);
 
-	if (p[0] == '@') continue;
-
-	/* Create S,O -> P */
-	accumulo_add_edge_object(elts, p, s, o, "@r", 1);
-
-	/* Create S,P -> O */
-	accumulo_add_edge_object(elts, o, s, p, "@n", 1);
+	accumulo_writer_add_write(wr, s, "spo", p, "", now, o);
+	accumulo_writer_add_write(wr, p, "pos", o, "", now, s);
+	accumulo_writer_add_write(wr, o, "osp", s, "", now, p);
 
 	if (s) free(s);
 	if (p) free(p);
@@ -557,24 +571,17 @@ librdf_storage_accumulo_add_statements(librdf_storage* storage,
 
 	if (rows++ > batch_size) {
 
-	    int ret = accumulo_add_elements(context->comms, elts);
-	    accumulo_elements_free(elts);
-	    elts = accumulo_elements_create();
-
+	    accumulo_writer_flush(wr);
 	    rows = 0;
 
 	}
 
     }
 
-    if (rows > 0) {
-	int ret = accumulo_add_elements(context->comms, elts);
-    }
-
-    accumulo_elements_free(elts);
+    accumulo_writer_flush(wr);
+    accumulo_writer_free(wr);
     
     return 0;
-#endif
 
 }
 
@@ -755,8 +762,6 @@ accumulo_results_stream_get_statement(void* context, int flags)
 	b = scontext->kv->colq;
 	c = scontext->kv->value;
 
-	printf("%d %s %s %s\n", scontext->tp, a, b, c);
-
 	if (scontext->statement) {
 	    librdf_free_statement(scontext->statement);
 	    scontext->statement = 0;
@@ -764,34 +769,18 @@ accumulo_results_stream_get_statement(void* context, int flags)
 
 	librdf_node* sn, * pn, * on;
 	if (scontext->tp == SPO) {
-	    printf("SPO\n");
 	    sn = node_constructor_helper(scontext->storage->world, a);
 	    pn = node_constructor_helper(scontext->storage->world, b);
 	    on = node_constructor_helper(scontext->storage->world, c);
 	} else if (scontext->tp == POS) {
-	    printf("POS\n");
 	    pn = node_constructor_helper(scontext->storage->world, a);
 	    on = node_constructor_helper(scontext->storage->world, b);
 	    sn = node_constructor_helper(scontext->storage->world, c);
 	} else {
-	    printf("OSP\n");
 	    on = node_constructor_helper(scontext->storage->world, a);
 	    sn = node_constructor_helper(scontext->storage->world, b);
 	    pn = node_constructor_helper(scontext->storage->world, c);
 	}
-
-	printf("sn... %d ", librdf_node_get_type(sn));
-
-	if (librdf_node_is_resource(sn))
-	    printf("URI: %s\n", librdf_node_to_string(sn));
-
-	if (librdf_node_is_literal(sn))
-	    printf("Literal: %s\n", librdf_node_to_string(sn));
-
-	if (librdf_node_is_blank(sn))
-	    printf("Blank: %s\n", librdf_node_to_string(sn));
-
-	printf("]]]\n");
 
 	if (sn == 0 || pn == 0 || on == 0) {
 	    if (sn) librdf_free_node(sn);
@@ -1003,9 +992,7 @@ librdf_storage_accumulo_find_statements(librdf_storage* storage,
 				  (const char*) o,
 				  &tp);
 
-    printf("Execute query...\n");
     accumulo_iterator* it = accumulo_query_execute(query);
-    printf("Executed.\n");
 
     accumulo_query_free(query);
 
@@ -1015,6 +1002,7 @@ librdf_storage_accumulo_find_statements(librdf_storage* storage,
     }
 
     scontext->it = it;
+    scontext->tp = tp;
 
     if (accumulo_iterator_has_next(it)) {
 	scontext->kv = accumulo_iterator_get_next(it);
@@ -1033,7 +1021,6 @@ librdf_storage_accumulo_find_statements(librdf_storage* storage,
 	accumulo_results_stream_finished((void*)scontext);
 	return NULL;
     }
-    printf("Return stream\n");
   
     return stream;
 
@@ -1064,8 +1051,6 @@ librdf_storage_accumulo_context_add_statement(librdf_storage* storage,
 
     librdf_storage_accumulo_instance* context; 
     context = (librdf_storage_accumulo_instance*)storage->instance;
-
-    printf("%s %s %s\n", s, p, o);
 
     accumulo_writer* wr = accumulo_writer_create(context->comms, "mytest");
 

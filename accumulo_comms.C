@@ -72,9 +72,7 @@ int accumulo_writer_flush(accumulo_writer* wr)
 }
 
 struct accumulo_query_str {
-    accumulo_query_str(const Scanner& s) : s(s) {
-          printf("BUNCHY3\n");
-    }
+    accumulo_query_str(const Scanner& s) : s(s) {}
     Scanner s;
     KeyValue kv;
 };
@@ -83,7 +81,6 @@ accumulo_query* accumulo_query_create(accumulo_comms* ac, const char* table)
 {
     std::string t(table);
     Scanner s = ac->conn->createScanner(t, *(ac->auth));
-    printf("askjhasd\n");
     return new accumulo_query_str(s);
 }
 
@@ -103,10 +100,14 @@ int accumulo_query_set_colf(accumulo_query* q,const char* colf)
     q->s.fetchColumnFamily(std::string(colf));
 }
 
+int accumulo_query_set_col(accumulo_query* q, const char* colf,
+			   const char* colq)
+{
+    q->s.fetchColumn(std::string(colf), std::string(colq));
+}
+
 struct accumulo_iterator_str {
-    accumulo_iterator_str(const ScannerIterator& it) : it(it) {
-      printf("BUNCHY\n");
-    }
+    accumulo_iterator_str(const ScannerIterator& it) : it(it) {}
     ScannerIterator it;
     KeyValue kv;
     accumulo_kv row;
