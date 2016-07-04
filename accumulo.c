@@ -844,8 +844,6 @@ static librdf_stream*
 librdf_storage_accumulo_serialise(librdf_storage* storage)
 {
 
-#ifdef BROKEN
-
     librdf_storage_accumulo_instance* context =
 	(librdf_storage_accumulo_instance*) storage->instance;
     
@@ -861,43 +859,30 @@ librdf_storage_accumulo_serialise(librdf_storage* storage)
     scontext->storage = storage;
     librdf_storage_add_reference(scontext->storage);
 
-    int are_spo;
-    int filter_spo;
-    char* path;
+    index_type tp;
 
-    accumulo_query* qry = accumulo_query_(0, 0, 0, &are_spo, &filter_spo, &path);
+    accumulo_query* query = accumulo_query_(context->comms, 0, 0, 0, &tp);
 
-    accumulo_results* results = accumulo_find(context->comms, path, qry);
+    accumulo_iterator* it = accumulo_query_execute(query);
 
-    accumulo_query_free(qry);
-    
-    if (results == 0) {
-	fprintf(stderr, "Query execute failed.\n");
-	exit(1);
+    accumulo_query_free(query);
+
+    if (it == 0) {
+	fprintf(stderr, "Failed to execute query.\n");
+        return 0;
     }
 
-    scontext->results = results;
-    scontext->iterator = accumulo_iterator_create(results);
-    scontext->are_spo = are_spo;
-    scontext->filter_spo = filter_spo;
+    scontext->it = it;
+    scontext->tp = tp;
 
-    while (!accumulo_iterator_done(scontext->iterator)) {
-
-	const char* a, *b, *c;
-	int val;
-
-	accumulo_iterator_get_next(scontext->iterator, &a, &b, &c, &val);
-
-	if ((val < 1) || (a[0] == '@') || (b[0] == '@') || (c[0] == '@')) {
-	    accumulo_iterator_next(scontext->iterator);
-	    continue;
-	}
-
-	break;
-	    
-    }
+    if (accumulo_iterator_has_next(it)) {
+	scontext->kv = accumulo_iterator_get_next(it);
+	scontext->at_end = 0;
+    } else
+	scontext->at_end = 1;
 
     librdf_stream* stream;
+
     stream =
 	librdf_new_stream(storage->world,
 			  (void*)scontext,
@@ -911,7 +896,6 @@ librdf_storage_accumulo_serialise(librdf_storage* storage)
     }
   
     return stream;
-#endif
 
 }
 
@@ -956,10 +940,6 @@ librdf_storage_accumulo_find_statements(librdf_storage* storage,
     scontext->accumulo_context = context;
 
     statement_helper(storage, statement, 0, &s, &p, &o, &c);
-
-    int index = 0;
-
-    int are_spo = 0;
     
     typedef accumulo_query* (*query_function)(accumulo_comms*, const char* s,
 					      const char* p, const char* o,
